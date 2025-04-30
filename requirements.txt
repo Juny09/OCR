@@ -8,4 +8,3 @@ pyperclip==1.9.0
 googletrans==4.0.0rc1
 easyocr
 torch  # Required by EasyOCR
-platform
