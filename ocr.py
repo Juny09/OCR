@@ -122,9 +122,7 @@ def main():
             )
 
         st.text_area("Extracted Text", translated_text, height=200)
-        if st.button("Copy Text to Clipboard"):
-            pyperclip.copy(translated_text)
-            st.success("Text copied to clipboard!")
+
 
 if __name__ == "__main__":
     main()
