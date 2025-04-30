@@ -1,21 +1,21 @@
-
-
 import streamlit as st
 from PIL import Image
 import numpy as np
 import pandas as pd
 from io import BytesIO
 from docx import Document
-import pyperclip
 from googletrans import Translator
 import easyocr
-import platform
 
+# Function to extract text from the image using EasyOCR
 def extract_text(img_array, langs):
-    # Extract text from the image using EasyOCR
-    reader = easyocr.Reader(langs, gpu=False)
-    results = reader.readtext(img_array, detail=0)  # detail=0 gives plain text
-    return '\n'.join(results)
+    try:
+        reader = easyocr.Reader(langs, gpu=False)
+        results = reader.readtext(img_array, detail=0)  # detail=0 gives plain text
+        return '\n'.join(results)
+    except Exception as e:
+        st.error(f"[OCR Error] {e}")
+        return ""
 
 def main():
     st.title('OCR')
@@ -47,10 +47,9 @@ def main():
         selected_lang_codes = [ocr_languages[lang] for lang in selected_languages]
 
         # Extract text from the image
-        try:
-            text = extract_text(img_array, selected_lang_codes)
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
+        text = extract_text(img_array, selected_lang_codes)
+
+        if not text:
             return
 
         st.image(img, caption='Uploaded Image', use_column_width=True)
@@ -86,7 +85,6 @@ def main():
             translated_text = text
 
         st.subheader('Translated Text')
-        container = st.container()
         container.write(translated_text)
 
         output_format = st.selectbox("Select Output Format", options=["Plain Text", "MS Word", "Excel"], index=0)
@@ -126,16 +124,23 @@ def main():
             )
 
         st.text_area("Extracted Text", translated_text, height=200)
-        # Only enable clipboard if running locally (optional)
-        if platform.system() != "Linux":  # Or use a better detection method for Streamlit Cloud
-            if st.button("Copy Text to Clipboard"):
-                try:
-                    pyperclip.copy(translated_text)
-                    st.success("Text copied to clipboard!")
-                except pyperclip.PyperclipException as e:
-                    st.warning(f"Clipboard not supported: {e}")
-        else:
-            st.info("Clipboard copy is not supported in this environment.")
+
+        # Add JavaScript for clipboard copy
+        st.markdown("""
+            <script>
+                function copyToClipboard(text) {
+                    navigator.clipboard.writeText(text).then(function() {
+                        alert('Text copied to clipboard!');
+                    }, function(err) {
+                        alert('Error copying text: ' + err);
+                    });
+                }
+            </script>
+        """, unsafe_allow_html=True)
+
+        # Button to trigger the copy to clipboard
+        if st.button("Copy Text to Clipboard"):
+            st.markdown(f'<script>copyToClipboard("{translated_text}");</script>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
