@@ -4,18 +4,18 @@ import numpy as np
 import pandas as pd
 from io import BytesIO
 from docx import Document
+import pyperclip
 from googletrans import Translator
 import easyocr
 
-# Function to extract text from the image using EasyOCR
+
 def extract_text(img_array, langs):
     try:
         reader = easyocr.Reader(langs, gpu=False)
         results = reader.readtext(img_array, detail=0)  # detail=0 gives plain text
         return '\n'.join(results)
     except Exception as e:
-        st.error(f"[OCR Error] {e}")
-        return ""
+        return f"[OCR Error] {e}"
 
 def main():
     st.title('OCR')
@@ -49,9 +49,6 @@ def main():
         # Extract text from the image
         text = extract_text(img_array, selected_lang_codes)
 
-        if not text:
-            return
-
         st.image(img, caption='Uploaded Image', use_column_width=True)
 
         st.subheader('Extracted Text')
@@ -78,13 +75,14 @@ def main():
         translate_lang_code = translate_languages[translate_language]
 
         # Translate text
-        if translate_lang_code != "en":  # No need to translate if it's already in English
+        if translate_lang_code != "en" and not text.startswith("[OCR Error]"):
             translator = Translator()
             translated_text = translator.translate(text, dest=translate_lang_code).text
         else:
             translated_text = text
 
         st.subheader('Translated Text')
+        container = st.container()
         container.write(translated_text)
 
         output_format = st.selectbox("Select Output Format", options=["Plain Text", "MS Word", "Excel"], index=0)
@@ -124,23 +122,9 @@ def main():
             )
 
         st.text_area("Extracted Text", translated_text, height=200)
-
-        # Add JavaScript for clipboard copy
-        st.markdown("""
-            <script>
-                function copyToClipboard(text) {
-                    navigator.clipboard.writeText(text).then(function() {
-                        alert('Text copied to clipboard!');
-                    }, function(err) {
-                        alert('Error copying text: ' + err);
-                    });
-                }
-            </script>
-        """, unsafe_allow_html=True)
-
-        # Button to trigger the copy to clipboard
         if st.button("Copy Text to Clipboard"):
-            st.markdown(f'<script>copyToClipboard("{translated_text}");</script>', unsafe_allow_html=True)
+            pyperclip.copy(translated_text)
+            st.success("Text copied to clipboard!")
 
 if __name__ == "__main__":
     main()
