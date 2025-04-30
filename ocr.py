@@ -9,7 +9,7 @@ from docx import Document
 import pyperclip
 from googletrans import Translator
 import easyocr
-
+import platform
 
 def extract_text(img_array, langs):
     # Extract text from the image using EasyOCR
@@ -126,9 +126,16 @@ def main():
             )
 
         st.text_area("Extracted Text", translated_text, height=200)
-        if st.button("Copy Text to Clipboard"):
-            pyperclip.copy(translated_text)
-            st.success("Text copied to clipboard!")
+        # Only enable clipboard if running locally (optional)
+        if platform.system() != "Linux":  # Or use a better detection method for Streamlit Cloud
+            if st.button("Copy Text to Clipboard"):
+                try:
+                    pyperclip.copy(translated_text)
+                    st.success("Text copied to clipboard!")
+                except pyperclip.PyperclipException as e:
+                    st.warning(f"Clipboard not supported: {e}")
+        else:
+            st.info("Clipboard copy is not supported in this environment.")
 
 if __name__ == "__main__":
     main()
